@@ -1,14 +1,15 @@
 import cv2
 from pyzbar.pyzbar import decode
 
-cap = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(0)
 
 while True:
-    _, frame = cap.read()
+    success, image = camera.read()
 
-    # check for QR codes
-    if decode(frame):
+    # look for QR codes
+    qr_codes = decode(image)
+
+    if qr_codes:
         print("Success!")
 
-    # show camera
-    cv2.imshow("QR Scanner", frame)
+    cv2.imshow("QR Scanner", image)
