@@ -1,8 +1,15 @@
-<script src="https://unpkg.com/html5-qrcode"></script>
+import cv2
+from pyzbar.pyzbar import decode
 
-<div id="reader"></div>
+cap = cv2.VideoCapture(0)
 
-<script>
-new Html5QrcodeScanner("reader", { fps: 10 })
-.render(result => alert(result));
-</script>
+while True:
+    _, frame = cap.read()
+
+    for code in decode(frame):
+        print("Scanned:", code.data.decode("utf-8"))
+
+    cv2.imshow("QR Scanner", frame)
+
+    if cv2.waitKey(1) == ord('q'):
+        break
