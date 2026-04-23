@@ -1,26 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>QR Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-</head>
-<body>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-<h2>Scan Student QR Code</h2>
-
-<div id="reader" style="width:300px;"></div>
+<div id="reader"></div>
 
 <script>
-function onScanSuccess(decodedText) {
-    alert("Scanned: " + decodedText);
-    console.log(decodedText);
-}
-
-new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 250
-}).render(onScanSuccess);
+new Html5QrcodeScanner("reader", { fps: 10 })
+.render(result => alert(result));
 </script>
-
-</body>
-</html>
