@@ -13,10 +13,7 @@ function onScanSuccess(decodedText) {
     console.log(decodedText);
 }
 
-new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 250
-}).render(onScanSuccess);
+new Html5QrcodeScanner("reader").render(onScanSuccess);
 </script>
 
 </body>
