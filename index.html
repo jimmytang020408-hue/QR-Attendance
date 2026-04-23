@@ -6,9 +6,7 @@ cap = cv2.VideoCapture(0)
 while True:
     _, frame = cap.read()
 
-    # check for QR codes
-    if decode(frame):
-        print("Success!")
+    for code in decode(frame):
+        print("Scanned:", code.data.decode("utf-8"))
 
-    # show camera
     cv2.imshow("QR Scanner", frame)
