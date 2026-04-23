@@ -4,13 +4,11 @@ from pyzbar.pyzbar import decode
 cap = cv2.VideoCapture(0)
 
 while True:
-    ret, frame = cap.read()
+    _, frame = cap.read()
 
-    if not ret:
-        print("Camera not working")
-        break
-
-    for code in decode(frame):
+    # check for QR codes
+    if decode(frame):
         print("Success!")
 
+    # show camera
     cv2.imshow("QR Scanner", frame)
