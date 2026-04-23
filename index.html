@@ -12,6 +12,7 @@ while True:
 
     # show camera
     cv2.imshow("QR Scanner", frame)
-     
-if cv2.waitKey(1) & 0xFF == ord('q'):
+
+    # press Q to quit (MUST be inside loop)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
