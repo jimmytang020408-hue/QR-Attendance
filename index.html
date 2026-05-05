@@ -207,38 +207,44 @@
   }
 
   // QR scanner
- let html5QrCode;
+let html5QrCode;
 let scannerRunning = false;
 
-function toggleScanner() {
+async function toggleScanner() {
   const btn = document.getElementById("scanBtn");
 
   if (scannerRunning) {
-    html5QrCode.stop().then(() => {
-      scannerRunning = false;
-      btn.textContent = "Start Scanner";
-      btn.classList.remove("stop");
-    });
+    await html5QrCode.stop();
+    await html5QrCode.clear();
+
+    scannerRunning = false;
+    btn.textContent = "Start Scanner";
+    btn.classList.remove("stop");
     return;
   }
 
-  html5QrCode = new Html5Qrcode("reader");
+  try {
+    html5QrCode = new Html5Qrcode("reader");
 
-  html5QrCode.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: 220
-    },
-    (decodedText) => {
-      onScanSuccess(decodedText);
-    },
-    () => {}
-  );
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 220
+      },
+      (decodedText) => {
+        onScanSuccess(decodedText);
+      }
+    );
 
-  scannerRunning = true;
-  btn.textContent = "Stop Scanner";
-  btn.classList.add("stop");
+    scannerRunning = true;
+    btn.textContent = "Stop Scanner";
+    btn.classList.add("stop");
+
+  } catch (err) {
+    console.error("Camera start failed:", err);
+    alert("Camera failed to start. Check permissions or use HTTPS.");
+  }
 }
 
 function onScanSuccess(qr) {
