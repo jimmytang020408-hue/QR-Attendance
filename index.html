@@ -1,209 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>QR Attendance</title>
-
-  <!-- ✅ FIXED QR LIBRARY (important) -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
       background: #f5f5f5;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem;
+      justify-content: center;
+      padding: 2rem 1rem;
     }
 
     h1 {
-      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 2rem;
+      letter-spacing: -0.01em;
     }
 
     .card {
-      background: white;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e8e8e8;
       padding: 1.5rem;
-      border-radius: 12px;
       width: 100%;
       max-width: 360px;
-      border: 1px solid #ddd;
-    }
-
-    #reader {
-      width: 100%;
       margin-bottom: 1rem;
     }
 
-    button {
+    #reader { width: 100% !important; border-radius: 10px; overflow: hidden; }
+    #reader video { border-radius: 10px; }
+
+    .scan-btn {
       width: 100%;
-      padding: 0.7rem;
-      margin-top: 0.5rem;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      background: #111;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      background: black;
-      color: white;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: background 0.15s;
+    }
+    .scan-btn:hover { background: #333; }
+    .scan-btn.stop  { background: #e8e8e8; color: #111; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.5rem 0;
+      color: #bbb;
+      font-size: 0.75rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e8e8e8;
     }
 
-    input {
-      width: 100%;
-      padding: 0.6rem;
+    .manual-row {
+      display: flex;
+      gap: 0.5rem;
       margin-top: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
     }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      outline: none;
+      background: #fafafa;
+      color: #111;
+    }
+    input[type="text"]:focus { border-color: #111; }
+
+    .submit-btn {
+      padding: 0.65rem 1rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover { background: #333; }
 
     #status {
-      margin-top: 1rem;
-      padding: 0.6rem;
-      border-radius: 8px;
+      font-size: 0.82rem;
       text-align: center;
-      background: #eee;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      background: #f5f5f5;
+      color: #888;
+      margin-top: 1rem;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
     }
-
-    #status.success { background: #d4f7dc; }
-    #status.late { background: #fff3cd; }
-    #status.error { background: #f8d7da; }
+    #status.success { background: #edf7f2; color: #2a7a50; }
+    #status.late    { background: #fdf6e3; color: #b07a20; }
+    #status.error   { background: #fdf0ee; color: #c0392b; }
   </style>
 </head>
-
 <body>
+  <h1>📋 Attendance</h1>
 
-<h1>📋 QR Attendance</h1>
+  <div class="card">
+    <div id="reader"></div>
+    <button class="scan-btn" id="scanBtn" onclick="toggleScanner()">Start Scanner</button>
 
-<div class="card">
+    <div class="divider">or enter ID manually</div>
 
-  <div id="reader"></div>
+    <div class="manual-row">
+      <input type="text" id="manualId" placeholder="Enter ID..." onkeydown="if(event.key==='Enter') submitManual()" />
+      <button class="submit-btn" onclick="submitManual()">Submit</button>
+    </div>
 
-  <button onclick="toggleScanner()">Start Scanner</button>
-
-  <input id="manualId" placeholder="Enter ID..." />
-  <button onclick="submitManual()">Submit</button>
-
-  <div id="status">Waiting...</div>
-
-</div>
+    <div id="status">Waiting...</div>
+  </div>
 
 <script>
-console.log("JS Loaded");
+  //Constants used for further purposes
+  const AIRTABLE_API_KEY = "patYz5lRtzfBTgvye";
+  const BASE_ID          = "app5ijYL6JzH9alCV";
+  const TABLE_NAME       = "Student Attendance";
+  const QR_FIELD         = "QR";
+  const STATUS_FIELD     = "Status";
+  const LATE_AFTER       = "08:30";
 
-// 🔐 Airtable setup
-const AIRTABLE_API_KEY = "YOUR_API_KEY";
-const BASE_ID = "YOUR_BASE_ID";
-const TABLE_NAME = "Student Attendance";
-const QR_FIELD = "QR";
-const STATUS_FIELD = "Status";
-const LATE_AFTER = "08:30";
-
-// scanner state
-let scanner;
-let running = false;
-let lastScan = null;
-let cooldown = false;
-
-// 🧠 Decide Present or Late
-function getStatus() {
-  const [h, m] = LATE_AFTER.split(":").map(Number);
-  const now = new Date();
-  const cutoff = new Date(now);
-  cutoff.setHours(h, m, 0, 0);
-
-  return now > cutoff ? "Late" : "Present";
-}
-
-// 🎨 UI update
-function setStatus(type, msg) {
-  const el = document.getElementById("status");
-  el.className = type;
-  el.textContent = msg;
-}
-
-// 📡 MAIN LOGIC
-async function markAttendance(value) {
-  value = value.trim();
-
-  setStatus("", "Looking up record...");
-
-  try {
-    const url =
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
-      `?filterByFormula=${encodeURIComponent(`{${QR_FIELD}}="${value}"`)}`;
-
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`
-      }
-    });
-
-    const data = await res.json();
-
-    if (!data.records || data.records.length === 0) {
-      setStatus("error", "No record found");
-      return;
-    }
-
-    const recordId = data.records[0].id;
-    const status = getStatus();
-
-    const upd = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          fields: {
-            [STATUS_FIELD]: status
-          }
-        })
-      }
-    );
-
-    if (!upd.ok) throw new Error("Update failed");
-
-    setStatus(
-      status === "Late" ? "late" : "success",
-      `Marked ${status}: ${value}`
-    );
-
-  } catch (e) {
-    setStatus("error", e.message);
+  let scanner = null;
+  let scannerRunning = false;
+  let lastScan = null, cooldown = false;
+// This declares whether a student is late or present depending on the time frame in which it was scanned
+  function getStatus() {
+    const [h, m] = LATE_AFTER.split(":").map(Number);
+    const cutoff = new Date();
+    cutoff.setHours(h, m, 0, 0);
+    return new Date() > cutoff ? "Late" : "Present";
   }
-}
+// Updates the color of the status box for convinience
+  function setStatus(type, msg) {
+    const el = document.getElementById("status");
+    el.className = type;
+    el.textContent = msg;
+  }
+//Shows a loading message while matching the data scanned with AirTable
+  async function markAttendance(value) {
+    setStatus("", "Looking up record...");
+//This will send a request to Airtable to find the scanned qr code and return the data
+    try {
+      const res = await fetch(
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
+        `?filterByFormula=${encodeURIComponent(`{${QR_FIELD}}="${value}"`)}`,
+        { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
+      );
+      const data = await res.json();
+//If no value is found, then it'll set the status as error and show that no record is found for that specific value
+      if (!data.records?.length) {
+        setStatus("error", `No record found for: ${value}`);
+        return;
+      }
+// Get Airtable record ID and determine if student is present or late
+      const recordId = data.records[0].id;
+      const status   = getStatus();
+// Send request to Airtable to update the student's Status field
+// Then show success message if update works, otherwise show error
+      const upd = await fetch(
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ fields: { [STATUS_FIELD]: status } })
+        }
+      );
 
-// ⌨️ manual input
-function submitManual() {
-  const val = document.getElementById("manualId").value.trim();
-  if (!val) return;
+      if (!upd.ok) throw new Error("Update failed");
 
-  document.getElementById("manualId").value = "";
-  markAttendance(val);
-}
+      setStatus(status === "Late" ? "late" : "success", `Marked ${status}: ${value}`);
 
-// 📷 QR scanner
+    } catch (e) {
+      setStatus("error", e.message || "Something went wrong");
+    }
+  }
+
+  // QR scanner
+  let scanner;
+let scannerRunning = false;
+
 function toggleScanner() {
-  if (running) {
-    scanner.clear();
-    running = false;
+  const btn = document.getElementById("scanBtn");
+
+  if (scannerRunning) {
+    scanner.clear().then(() => {
+      scannerRunning = false;
+      btn.textContent = "Start Scanner";
+      btn.classList.remove("stop");
+    });
     return;
   }
 
-  scanner = new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 200
-  });
+  scanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: 220 },
+    false
+  );
 
-  scanner.render(onScanSuccess);
-  running = true;
+  scanner.render(
+    (decodedText, decodedResult) => {
+      onScanSuccess(decodedText);
+    },
+    (error) => {
+      // ignore scan errors (normal while scanning)
+    }
+  );
+
+  scannerRunning = true;
+  btn.textContent = "Stop Scanner";
+  btn.classList.add("stop");
 }
 
-// 🎯 scan result
 function onScanSuccess(qr) {
   if (cooldown || qr === lastScan) return;
 
@@ -217,7 +255,14 @@ function onScanSuccess(qr) {
     lastScan = null;
   }, 3000);
 }
-</script>
 
+  // Manual entry
+  function submitManual() {
+    const val = document.getElementById("manualId").value.trim();
+    if (!val) return;
+    document.getElementById("manualId").value = "";
+    markAttendance(val);
+  }
+</script>
 </body>
 </html>
