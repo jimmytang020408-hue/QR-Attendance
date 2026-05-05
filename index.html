@@ -1,20 +1,136 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-</head>
-<body>
-
-<div id="reader" style="width:300px;"></div>
-
 <script>
-function onScanSuccess(decodedText) {
-    alert("Success: " + decodedText);
-    console.log(decodedText);
-}
+  const AIRTABLE_API_KEY = "YOUR_API_KEY";
+  const BASE_ID = "YOUR_BASE_ID";
+  const TABLE_NAME = "Student Attendance";
+  const QR_FIELD = "QR"; // ⚠️ MUST match Airtable column name exactly
+  const STATUS_FIELD = "Status";
+  const LATE_AFTER = "08:30";
 
-new Html5QrcodeScanner("reader").render(onScanSuccess);
+  let scanner = null;
+  let scannerRunning = false;
+  let lastScan = null;
+  let cooldown = false;
+
+  // Decide Present or Late based on time
+  function getStatus() {
+    const [h, m] = LATE_AFTER.split(":").map(Number);
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setHours(h, m, 0, 0);
+
+    return now > cutoff ? "Late" : "Present";
+  }
+
+  // Update UI status box
+  function setStatus(type, msg) {
+    const el = document.getElementById("status");
+    el.className = type;
+    el.textContent = msg;
+  }
+
+  // MAIN FUNCTION: lookup + update Airtable
+  async function markAttendance(value) {
+    value = value.trim(); // IMPORTANT: removes hidden spaces
+
+    console.log("Searching for QR:", value);
+
+    setStatus("", "Looking up record...");
+
+    try {
+      const url =
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
+        `?filterByFormula=${encodeURIComponent(`{${QR_FIELD}}="${value}"`)}`;
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_API_KEY}`
+        }
+      });
+
+      const data = await res.json();
+
+      console.log("Airtable response:", data);
+
+      if (!data.records || data.records.length === 0) {
+        setStatus("error", `No record found for: ${value}`);
+        return;
+      }
+
+      const recordId = data.records[0].id;
+      const status = getStatus();
+
+      const upd = await fetch(
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            fields: {
+              [STATUS_FIELD]: status
+            }
+          })
+        }
+      );
+
+      if (!upd.ok) {
+        throw new Error("Failed to update record in Airtable");
+      }
+
+      setStatus(
+        status === "Late" ? "late" : "success",
+        `Marked ${status}: ${value}`
+      );
+
+    } catch (e) {
+      console.error(e);
+      setStatus("error", e.message || "Something went wrong");
+    }
+  }
+
+  // Manual input
+  function submitManual() {
+    const input = document.getElementById("manualId");
+    const val = input.value.trim();
+
+    if (!val) return;
+
+    input.value = "";
+    markAttendance(val);
+  }
+
+  // QR scanner toggle
+  function toggleScanner() {
+    if (scannerRunning) {
+      scanner.clear();
+      scannerRunning = false;
+      document.getElementById("scanBtn").textContent = "Start Scanner";
+    } else {
+      scanner = new Html5QrcodeScanner("reader", {
+        fps: 10,
+        qrbox: 220
+      });
+
+      scanner.render(onScanSuccess);
+      scannerRunning = true;
+      document.getElementById("scanBtn").textContent = "Stop Scanner";
+    }
+  }
+
+  // QR scan handler
+  function onScanSuccess(qr) {
+    if (cooldown || qr === lastScan) return;
+
+    cooldown = true;
+    lastScan = qr;
+
+    markAttendance(qr);
+
+    setTimeout(() => {
+      cooldown = false;
+      lastScan = null;
+    }, 3000);
+  }
 </script>
-
-</body>
-</html>
