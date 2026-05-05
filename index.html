@@ -207,14 +207,14 @@
   }
 
   // QR scanner
-  let scanner;
+ let html5QrCode;
 let scannerRunning = false;
 
 function toggleScanner() {
   const btn = document.getElementById("scanBtn");
 
   if (scannerRunning) {
-    scanner.clear().then(() => {
+    html5QrCode.stop().then(() => {
       scannerRunning = false;
       btn.textContent = "Start Scanner";
       btn.classList.remove("stop");
@@ -222,19 +222,18 @@ function toggleScanner() {
     return;
   }
 
-  scanner = new Html5QrcodeScanner(
-    "reader",
-    { fps: 10, qrbox: 220 },
-    false
-  );
+  html5QrCode = new Html5Qrcode("reader");
 
-  scanner.render(
-    (decodedText, decodedResult) => {
+  html5QrCode.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 220
+    },
+    (decodedText) => {
       onScanSuccess(decodedText);
     },
-    (error) => {
-      // ignore scan errors (normal while scanning)
-    }
+    () => {}
   );
 
   scannerRunning = true;
@@ -255,7 +254,6 @@ function onScanSuccess(qr) {
     lastScan = null;
   }, 3000);
 }
-
   // Manual entry
   function submitManual() {
     const val = document.getElementById("manualId").value.trim();
