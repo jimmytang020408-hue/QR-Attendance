@@ -319,17 +319,15 @@ function submitManual() {
   markAttendance(val);
 }
 
-function scheduleReset() {
- 
+
+function resetStatuses() {
+
   const now = new Date();
-
   const reset = new Date();
-
-  reset.setHours(23, 34, 0, 0); 
+  reset.setHours(23, 38, 0, 0);
 
   const delay = reset - now;
-
-  if (delay <= 0) return; 
+  if (delay <= 0) return;
 
   setTimeout(async () => {
 
@@ -342,9 +340,10 @@ function scheduleReset() {
       }
     );
 
-    const { records } = await res.json();
+    const data = await res.json();
 
-    for (const r of records) {
+    for (const r of data.records) {
+
       await fetch(
         `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${r.id}`,
         {
@@ -355,7 +354,7 @@ function scheduleReset() {
           },
           body: JSON.stringify({
             fields: {
-              [STATUS_FIELD]: ""
+              [STATUS_FIELD]: "Not Marked"
             }
           })
         }
@@ -365,7 +364,7 @@ function scheduleReset() {
   }, delay);
 }
 
-scheduleReset();
+resetStatuses();
 </script>
 </body>
 </html>
