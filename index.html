@@ -140,179 +140,121 @@
   </div>
 
 <script>
-const AIRTABLE_API_KEY = "patYz5lRtzfBTgvye.b921f2436359b7988d4a8eaf9086cbc324f00ebf19f29cf1323b886c78dd7551";
-const BASE_ID = "app5ijYL6JzH9alCV";
-const TABLE_NAME = "Student Attendance";
-const QR_FIELD = "AutoID";
-const STATUS_FIELD = "Status";
-const LATE_AFTER = "08:30";
+  const AIRTABLE_API_KEY = "patYz5lRtzfBTgvye.b921f2436359b7988d4a8eaf9086cbc324f00ebf19f29cf1323b886c78dd7551";
+  const BASE_ID          = "app5ijYL6JzH9alCV";
+  const TABLE_NAME       = "Student Attendance";
+  const QR_FIELD         = "AutoID";
+  const STATUS_FIELD     = "Status";
+  const LATE_AFTER       = "08:30";
 
-let scanner = null;
-let scannerRunning = false;
-let lastScan = null;
-let cooldown = false;
+  let scanner        = null;    
+  let scannerRunning = false;   
+  let lastScan       = null;   
+  let cooldown       = false;  
 
-function getStatus() {
+  function getStatus() {
+    const [h, m] = LATE_AFTER.split(":").map(Number);       
+    const cutoff = new Date();
+    cutoff.setHours(h, m, 0, 0);
+    return new Date() > cutoff ? "Late" : "Present";
+  }
 
-  const [h, m] = LATE_AFTER.split(":").map(Number);
+  function setStatus(type, msg) {
+    const el = document.getElementById("status");
+    el.className = type;                                 
+    el.textContent = msg;
+  }
 
-  const cutoff = new Date();
+  async function markAttendance(value) {
+    value = value.trim();                              
+    setStatus("", "Looking up record...");
 
-  cutoff.setHours(h, m, 0, 0);
+    try {
+      const res = await fetch(
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
+        `?filterByFormula=${encodeURIComponent(`{${QR_FIELD}}="${value}"`)}`,          
+        { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }                    
+      );
+      const data = await res.json();
+      
 
-  return new Date() > cutoff ? "Late" : "Present";
-}
-
-function setStatus(type, msg) {
-
-  document.getElementById("status").el.className = type;
-
-  document.getElementById("status").textContent = msg;
-}
-
-async function markAttendance(value) {
-
-  value = value.trim();
-
-  setStatus("", "Looking up record...");
-
-  try {
-
-    const res = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
-      `?filterByFormula=${encodeURIComponent(`{${QR_FIELD}}="${value}"`)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`
-        }
+      if (!data.records?.length) {                                   
+        setStatus("error", `No record found for: ${value}`);
+        return;
       }
-    );
 
-    const data = await res.json();
+      const recordId = data.records[0].id;                                  
+      const status   = getStatus();
 
-    if (!data.records?.length) {
+      const upd = await fetch(
+        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,          
+        {
+          method: "PATCH",                                                                    
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ fields: { [STATUS_FIELD]: status } })
+        }
+      );
 
-      setStatus("error", `No record found for: ${value}`);
+      if (!upd.ok) throw new Error("Update failed");                           
 
+      setStatus(status === "Late" ? "late" : "success", `Marked ${status}: ${value}`);                 
+
+    } catch (e) {
+      setStatus("error", e.message || "Something went wrong");
+    }
+  }
+
+  async function toggleScanner() {                                       
+    const btn = document.getElementById("scanBtn");
+
+    if (scannerRunning) {
+      await scanner.stop();                              
+      scannerRunning = false;                                         
+      btn.textContent = "Start Scanner";
+      btn.classList.remove("stop");
       return;
     }
 
-    const recordId = data.records[0].id;                //Finds the student who matches the ID
-
-    const status = getStatus();                        //Determines if the student is present or late
-
-    const upd = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,
-      {
-        method: "PATCH",
-
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          fields: {
-            [STATUS_FIELD]: status
-          }
-        })
-      }
-    );
-
-    if (!upd.ok) {
-
-      throw new Error("Update failed");
+    if (typeof Html5Qrcode === "undefined") {
+      setStatus("error", "QR library not loaded. Check your internet connection.");
+      return;
     }
 
-    setStatus(
-      status === "Late" ? "late" : "success",
-      `Marked ${status}: ${value}`
-    );
+    try {
+      scanner = new Html5Qrcode("reader");
 
-  } catch (e) {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 220 },
+        (decodedText) => onScanSuccess(decodedText)
+      );
 
-    setStatus("error", e.message || "Something went wrong");
+      scannerRunning = true;
+      btn.textContent = "Stop Scanner";
+      btn.classList.add("stop");
+
+    } catch (err) {
+      setStatus("error", "Camera error: " + (err.message || "Check permissions & use HTTPS")); 
+    }
   }
-}
-
-async function toggleScanner() {
-
-  const btn = document.getElementById("scanBtn");
-
-  if (scannerRunning) {
-
-    await scanner.stop();
-
-    scannerRunning = false;
-
-    btn.textContent = "Start Scanner";
-
-    btn.classList.remove("stop");
-
-    return;
+era is
+  function onScanSuccess(qr) {
+    if (cooldown || qr === lastScan) return;
+    cooldown = true;
+    lastScan = qr;             
+    markAttendance(qr);
+    setTimeout(() => { cooldown = false; lastScan = null; }, 3000);
   }
 
-  if (typeof Html5Qrcode === "undefined") {
-
-    setStatus("error", "QR library not loaded");
-
-    return;
+  function submitManual() {
+    const val = document.getElementById("manualId").value.trim();
+    if (!val) return;                                                       
+    document.getElementById("manualId").value = "";
+    markAttendance(val);
   }
-
-  try {
-
-    scanner = new Html5Qrcode("reader");
-
-    await scanner.start(
-      { facingMode: "environment" },
-
-      { fps: 10, qrbox: 220 },
-
-      (decodedText) => onScanSuccess(decodedText)
-    );
-
-    scannerRunning = true;
-
-    btn.textContent = "Stop Scanner";
-
-    btn.classList.add("stop");
-
-  } catch (err) {
-
-    setStatus("error", "Camera error");
-  }
-}
-
-function onScanSuccess(qr) {
-
-  if (cooldown || qr === lastScan) return;
-
-  cooldown = true;
-
-  lastScan = qr;
-
-  markAttendance(qr);
-
-  setTimeout(() => {
-
-    cooldown = false;
-
-    lastScan = null;
-
-  }, 3000);
-}
-
-function submitManual() {
-
-  const val = document.getElementById("manualId").value.trim();
-
-  if (!val) return;
-
-  document.getElementById("manualId").value = "";
-
-  markAttendance(val);
-}
-
 </script>
 </body>
 </html>
