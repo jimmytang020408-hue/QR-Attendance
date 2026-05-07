@@ -319,52 +319,6 @@ function submitManual() {
   markAttendance(val);
 }
 
-
-function resetStatuses() {
-
-  const now = new Date();
-  const reset = new Date();
-  reset.setHours(23, 38, 0, 0);
-
-  const delay = reset - now;
-  if (delay <= 0) return;
-
-  setTimeout(async () => {
-
-    const res = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`
-        }
-      }
-    );
-
-    const data = await res.json();
-
-    for (const r of data.records) {
-
-      await fetch(
-        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${r.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            fields: {
-              [STATUS_FIELD]: "Not Marked"
-            }
-          })
-        }
-      );
-    }
-
-  }, delay);
-}
-
-resetStatuses();
 </script>
 </body>
 </html>
