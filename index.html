@@ -199,9 +199,9 @@ async function markAttendance(value) {
       return;
     }
 
-    const recordId = data.records[0].id;
+    const recordId = data.records[0].id;                //Finds the student who matches the ID
 
-    const status = getStatus();
+    const status = getStatus();                        //Determines if the student is present or late
 
     const upd = await fetch(
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`,
