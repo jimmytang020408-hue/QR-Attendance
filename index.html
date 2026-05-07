@@ -165,11 +165,9 @@ function getStatus() {
 
 function setStatus(type, msg) {
 
-  const el = document.getElementById("status");
+  document.getElementById("status").el.className = type;
 
-  el.className = type;
-
-  el.textContent = msg;
+  document.getElementById("status").textContent = msg;
 }
 
 async function markAttendance(value) {
