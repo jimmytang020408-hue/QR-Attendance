@@ -256,17 +256,11 @@
   }
 
 async function resetStatus() {
-  const url =
-    "https://api.airtable.com/v0/" +
-    PROJECT +
-    "/" +
-    encodeURIComponent(TABLE);
-
+  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
   const headers = {
     Authorization: "Bearer " + AIRTABLE_API_KEY,
     "Content-Type": "application/json"
   };
-
   try {
     const res = await fetch(url, { headers });
     const data = await res.json();
@@ -275,9 +269,7 @@ async function resetStatus() {
       await fetch(url + "/" + record.id, {
         method: "PATCH",
         headers,
-        body: JSON.stringify({
-          fields: {
-            [STATUS]: "Unmarked"
+        body: JSON.stringify({ fields: { [STATUS]: "Unmarked" } })
           }
         })
       });
