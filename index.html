@@ -256,14 +256,15 @@
   }
 
 async function resetStatus() {
-  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
-
   try {
-    const res = await fetch(url, { headers: { Authorization: "Bearer " + AIRTABLE_API_KEY, "Content-Type": "application/json" } });
+    const res = await fetch("https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE), {
+      headers: { Authorization: "Bearer " + AIRTABLE_API_KEY, "Content-Type": "application/json" }
+    });
+
     const data = await res.json();
 
     for (const record of data.records) {
-      await fetch(url + "/" + record.id, {
+      await fetch("https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE) + "/" + record.id, {
         method: "PATCH",
         headers: { Authorization: "Bearer " + AIRTABLE_API_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({ fields: { [STATUS]: "Unmarked" } })
