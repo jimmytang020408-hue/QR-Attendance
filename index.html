@@ -255,7 +255,7 @@
     markAttendance(val);
   }
 async function markAbsent() {
-  const url = const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
+  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
   const headers = {
     Authorization: "Bearer " + AIRTABLE_API_KEY,
     "Content-Type": "application/json"
@@ -289,7 +289,6 @@ function scheduleAbsent() {
   const ms = deadline - now;
 
   setTimeout(markAbsent, ms);
-}
 }
 scheduleAbsent();
 </script>
