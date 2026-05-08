@@ -255,11 +255,12 @@
     markAttendance(val);
   }
 async function markAbsent() {
+  console.log("markAbsent called");
   const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
   const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
   const res = await fetch(url, { headers });
   const data = await res.json();
-
+  console.log(data);
   for (const r of data.records) {
     if (!r.fields[STATUS]) {
       await fetch(url + "/" + r.id, {
@@ -274,7 +275,7 @@ async function markAbsent() {
 function scheduleAbsent() {
   const now = new Date();
   const deadline = new Date();
-  deadline.setHours(0, 48, 0, 0);
+  deadline.setHours(0, 55, 0, 0); // change to your time
   if (now > deadline) deadline.setDate(deadline.getDate() + 1);
   const ms = deadline - now;
   console.log("Absent fires in " + Math.round(ms / 60000) + " minutes");
