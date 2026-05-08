@@ -202,7 +202,7 @@
       setStatus(status === "Late" ? "late" : "success", "Marked " + status + ": " + value);                  
 
     } catch (e) {
-      setStatus("error", e.message || "Something went wrong");
+      setStatus("error", "Something went wrong");
     }
   }
 
@@ -218,7 +218,7 @@
     }
 
     if (typeof Html5Qrcode === "undefined") {
-      setStatus("error", "QR library not loaded. Check your internet connection.");
+      setStatus("error", "QR library not loaded.");
       return;
     }
 
@@ -236,7 +236,7 @@
       btn.classList.add("stop");
 
     } catch (err) {
-      setStatus("error", "Camera error: " + (err.message || "Check permissions & use HTTPS"));        
+      setStatus("error", "Camera error"        
     }
   }
 
