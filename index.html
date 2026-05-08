@@ -255,7 +255,7 @@
     markAttendance(val);
   }
 async function markAbsent() {
-  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE;
+  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
   const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
   const res  = await fetch(url, { headers });
   const data = await res.json();
