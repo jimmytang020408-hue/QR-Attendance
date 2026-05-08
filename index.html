@@ -272,24 +272,24 @@ async function resetStatusOnOpen() {
     const data = await res.json();
 
     for (const record of data.records) {
-      if (record.fields[STATUS]) {
-        await fetch(`${url}/${record.id}`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({
-            fields: {
-              [STATUS]: ""   // clear it
-            }
-          })
-        });
-      }
+      await fetch(`${url}/${record.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          fields: {
+            [STATUS]: "Unmarked"
+          }
+        })
+      });
     }
 
-    console.log("Status reset complete");
+    console.log("All statuses reset to Unmarked");
   } catch (err) {
     console.error("Reset error:", err);
   }
 }
+
+resetStatusOnOpen();
 </script>
 </body>
 </html>
