@@ -254,31 +254,35 @@
     document.getElementById("manualId").value = "";
     markAttendance(val);
   }
+async function markAbsent() {
+  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE;
+  const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
+  const res  = await fetch(url, { headers });
+  const data = await res.json();
+
+  while (data.records.length > 0) {
+    const chunk = data.records.splice(0, 10);
+    await fetch(url, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        records: chunk.map(r => ({
+          id: r.id,
+          fields: { [STATUS]: r.fields[STATUS] ? r.fields[STATUS] : "Absent" }
+        }))
+      })
+    });
+  }
+}
+
 function scheduleAbsent() {
   const deadline = new Date();
-  deadline.setHours(0, 30, 0, 0);
+  deadline.setHours(15, 47, 0, 0);
   if (new Date() > deadline) deadline.setDate(deadline.getDate() + 1);
-  setTimeout(async () => {
-    const url = "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE;
-    const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
-    const res  = await fetch(url, { headers });
-    const data = await res.json();
-
-    while (data.records.length > 0) {
-      const chunk = data.records.splice(0, 10);
-      await fetch(url, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          records: chunk.map(r => ({
-            id: r.id,
-            fields: { [STATUS]: r.fields[STATUS] ? r.fields[STATUS] : "Absent" }
-          }))
-        })
-      });
-    }
-  }, deadline - new Date());
+  setTimeout(markAbsent, deadline - new Date());
 }
+
+markAbsent(); // remove this line after testing
 scheduleAbsent();
 </script>
 </body>
