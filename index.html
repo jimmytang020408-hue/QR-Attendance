@@ -186,7 +186,7 @@
       const status   = getStatus();
 
       const upd = await fetch(
-        "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME + recordId,       
+        "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME + "/" recordId,       
         {
           method: "PATCH",                                                             
           headers: {
