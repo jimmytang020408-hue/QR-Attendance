@@ -256,9 +256,9 @@
   }
 function scheduleAbsent() {
   const deadline = new Date();
-  deadline.setHours(0, 09, 0, 0);
+  deadline.setHours(0, 16, 0, 0);
   setTimeout(async () => {
-    const url = "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME;
+    const url = "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE;
     const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
     const res  = await fetch(url, { headers });
     const data = await res.json();
@@ -271,7 +271,7 @@ function scheduleAbsent() {
         body: JSON.stringify({
           records: chunk.map(r => ({
             id: r.id,
-            fields: { [STATUS_FIELD]: r.fields[STATUS_FIELD] ? r.fields[STATUS_FIELD] : "Absent" }
+            fields: { [STATUS]: r.fields[STATUS] ? r.fields[STATUS] : "Absent" }
           }))
         })
       });
