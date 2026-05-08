@@ -255,17 +255,36 @@
     markAttendance(val);
   }
 async function markAbsent() {
-  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
+  console.log("markAbsent called");
+
+  const url =
+    "https://api.airtable.com/v0/" +
+    PROJECT +
+    "/" +
+    encodeURIComponent(TABLE);
+
   const headers = {
     Authorization: "Bearer " + AIRTABLE_API_KEY,
     "Content-Type": "application/json"
   };
+
   try {
-   const res = await fetch(url, { headers });
+    // get all records
+    const res = await fetch(url, { headers });
     const data = await res.json();
-    for (const record of data.records) {
-      if (!record.fields[STATUS]) {
-        await fetch(`${url}/${record.id}`, {
+
+    console.log(data);
+
+    // loop through students
+    for (const r of data.records) {
+
+      // if no attendance status yet
+      if (!r.fields[STATUS]) {
+
+        console.log("Marking absent:", r.id);
+
+        // update Airtable
+        await fetch(url + "/" + r.id, {
           method: "PATCH",
           headers,
           body: JSON.stringify({
@@ -276,20 +295,33 @@ async function markAbsent() {
         });
       }
     }
+
+    console.log("Finished marking absences");
+
   } catch (e) {
     console.error("Error:", e);
   }
 }
 
 function scheduleAbsent() {
+
+  // TESTING: runs 1 minute from now
   const deadline = new Date();
-  deadline.setTime(deadline.getTime() + 3600000);
+  deadline.setMinutes(deadline.getMinutes() + 1);
 
   const now = new Date();
+
   const ms = deadline - now;
+
+  console.log(
+    "Absent check runs in",
+    Math.round(ms / 1000),
+    "seconds"
+  );
 
   setTimeout(markAbsent, ms);
 }
+
 scheduleAbsent();
 </script>
 </body>
