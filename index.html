@@ -277,12 +277,11 @@ async function markAbsent() {
 
 function scheduleAbsent() {
   const deadline = new Date();
-  deadline.setHours(15, 47, 0, 0);
+  deadline.setHours(0, 43, 0, 0);
   if (new Date() > deadline) deadline.setDate(deadline.getDate() + 1);
   setTimeout(markAbsent, deadline - new Date());
 }
-
-markAbsent(); // remove this line after testing
+  
 scheduleAbsent();
 </script>
 </body>
