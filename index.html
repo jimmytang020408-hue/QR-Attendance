@@ -255,7 +255,7 @@
     markAttendance(val);
   }
 
-async function resetAllStatus() {
+async function resetStatusOnOpen() {
   const url =
     "https://api.airtable.com/v0/" +
     PROJECT +
@@ -272,23 +272,24 @@ async function resetAllStatus() {
     const data = await res.json();
 
     for (const record of data.records) {
-      await fetch(`${url}/${record.id}`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({
-          fields: {
-            [STATUS]: ""   // clears status
-          }
-        })
-      });
+      if (record.fields[STATUS]) {
+        await fetch(`${url}/${record.id}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            fields: {
+              [STATUS]: ""   // clear it
+            }
+          })
+        });
+      }
     }
 
-    console.log("All statuses reset");
+    console.log("Status reset complete");
   } catch (err) {
     console.error("Reset error:", err);
   }
 }
-resetAllStatus()
 </script>
 </body>
 </html>
