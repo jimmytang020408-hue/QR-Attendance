@@ -254,39 +254,40 @@
     document.getElementById("manualId").value = "";
     markAttendance(val);
   }
-async function markAbsent() {
-  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
+
+async function resetAllStatus() {
+  const url =
+    "https://api.airtable.com/v0/" +
+    PROJECT +
+    "/" +
+    encodeURIComponent(TABLE);
+
+  const headers = {
+    Authorization: "Bearer " + AIRTABLE_API_KEY,
+    "Content-Type": "application/json"
+  };
+
   try {
     const res = await fetch(url, { headers });
     const data = await res.json();
-    for (const r of data.records) {
-      if (!r.fields[STATUS]) {
-        console.log("Marking absent:", r.id);
-        await fetch(url + "/" + r.id, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({
-            fields: {
-              [STATUS]: "Absent"
-            }
-          })
-        });
-      }
+
+    for (const record of data.records) {
+      await fetch(`${url}/${record.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          fields: {
+            [STATUS]: ""   // clears status
+          }
+        })
+      });
     }
-    console.log("Finished marking absences");
-  } catch (e) {
-    console.error("Error:", e);
+
+    console.log("All statuses reset");
+  } catch (err) {
+    console.error("Reset error:", err);
   }
 }
-function scheduleAbsent() {
-  const deadline = new Date();
-  deadline.setTime(deadline.getTime() + 3600000);
-  const now = new Date();
-  const ms = deadline - now;
-  setTimeout(markAbsent, ms);
-}
-
-scheduleAbsent();
 </script>
 </body>
 </html>
