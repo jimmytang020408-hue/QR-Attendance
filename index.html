@@ -307,8 +307,7 @@ function scheduleAbsent() {
 
   // TESTING: runs 1 minute from now
   const deadline = new Date();
-  deadline.setMinutes(deadline.getMinutes() + 1);
-
+  deadline.setTime(deadline.getTime() + 3600000);
   const now = new Date();
 
   const ms = deadline - now;
