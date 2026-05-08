@@ -275,7 +275,7 @@ async function markAbsent() {
 function scheduleAbsent() {
   const now = new Date();
   const deadline = new Date();
-  deadline.setHours(0, 55, 0, 0); // change to your time
+  deadline.setHours(0, 58, 0, 0); // change to your time
   if (now > deadline) deadline.setDate(deadline.getDate() + 1);
   const ms = deadline - now;
   console.log("Absent fires in " + Math.round(ms / 60000) + " minutes");
