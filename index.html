@@ -256,7 +256,7 @@
   }
 function scheduleAbsent() {
   const deadline = new Date();
-  deadline.setHours(9, 59, 0, 0);
+  deadline.setHours(0, 09, 0, 0);
   setTimeout(async () => {
     const url = "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME;
     const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
