@@ -256,31 +256,72 @@
   }
 async function markAbsent() {
   console.log("markAbsent called");
-  const url = "https://api.airtable.com/v0/" + PROJECT + "/" + encodeURIComponent(TABLE);
-  const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
-  const res = await fetch(url, { headers });
-  const data = await res.json();
-  console.log(data);
-  for (const r of data.records) {
-    if (!r.fields[STATUS]) {
-      await fetch(url + "/" + r.id, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: { [STATUS]: "Absent" } })
-      });
+
+  const url =
+    "https://api.airtable.com/v0/" +
+    PROJECT +
+    "/" +
+    encodeURIComponent(TABLE);
+
+  const headers = {
+    Authorization: "Bearer " + AIRTABLE_API_KEY,
+    "Content-Type": "application/json"
+  };
+
+  try {
+    // get all records
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+
+    console.log(data);
+
+    // loop through students
+    for (const r of data.records) {
+
+      // if no attendance status yet
+      if (!r.fields[STATUS]) {
+
+        console.log("Marking absent:", r.id);
+
+        // update Airtable
+        await fetch(url + "/" + r.id, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            fields: {
+              [STATUS]: "Absent"
+            }
+          })
+        });
+      }
     }
+
+    console.log("Finished marking absences");
+
+  } catch (e) {
+    console.error("Error:", e);
   }
 }
 
 function scheduleAbsent() {
-  const now = new Date();
+
+  // TESTING: runs 1 minute from now
   const deadline = new Date();
-  deadline.setHours(0, 58, 0, 0); // change to your time
-  if (now > deadline) deadline.setDate(deadline.getDate() + 1);
+  deadline.setMinutes(deadline.getMinutes() + 1);
+
+  const now = new Date();
+
   const ms = deadline - now;
-  console.log("Absent fires in " + Math.round(ms / 60000) + " minutes");
+
+  console.log(
+    "Absent check runs in",
+    Math.round(ms / 1000),
+    "seconds"
+  );
+
   setTimeout(markAbsent, ms);
 }
+
 scheduleAbsent();
 </script>
 </body>
