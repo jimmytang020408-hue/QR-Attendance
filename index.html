@@ -265,15 +265,24 @@ async function resetStatusOnOpen() {
     const res = await fetch(url, { headers });
     const data = await res.json();
     for (const record of data.records) {
-      await fetch(url + "/" + record.id, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ fields: { [STATUS]: "Unmarked" } })
-          }
-        })
-      });
-    }
-  } catch (err) {
+      try {
+  const res = await fetch(url, { headers });
+  const data = await res.json();
+
+  for (const record of data.records) {
+    await fetch(url + "/" + record.id, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({
+        fields: {
+          [STATUS]: "Unmarked"
+        }
+      })
+    });
+  }
+
+} catch (err) {
+
 }
 
 resetStatusOnOpen();
