@@ -141,10 +141,10 @@
 
 <script>
   const AIRTABLE_API_KEY = "patYz5lRtzfBTgvye.b921f2436359b7988d4a8eaf9086cbc324f00ebf19f29cf1323b886c78dd7551";
-  const BASE_ID          = "app5ijYL6JzH9alCV";
-  const TABLE_NAME       = "Student Attendance";
+  const PROJECT          = "app5ijYL6JzH9alCV";
+  const TABLE       = "Student Attendance";
   const QR_FIELD         = "AutoID";
-  const STATUS_FIELD     = "Status";
+  const STATUS     = "Status";
   const LATE_AFTER       = "08:30";
 
   let scanner        = null;    
@@ -171,7 +171,7 @@
 
     try {
       const res = await fetch(
-     "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME +
+     "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE +
      "?filterByFormula=" + encodeURIComponent('{' + QR_FIELD + '}="' + value + '"'),
      { headers: { Authorization: "Bearer " + AIRTABLE_API_KEY } }                   
       );
@@ -186,14 +186,14 @@
       const status   = getStatus();
 
       const upd = await fetch(
-        "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME + "/" + recordId,       
+        "https://api.airtable.com/v0/" + PROJECT + "/" + TABLE + "/" + recordId,       
         {
           method: "PATCH",                                                             
           headers: {
             Authorization: "Bearer " + AIRTABLE_API_KEY,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ fields: { [STATUS_FIELD]: status } })
+          body: JSON.stringify({ fields: { [STATUS]: status } })
         }
       );
 
@@ -254,6 +254,31 @@
     document.getElementById("manualId").value = "";
     markAttendance(val);
   }
+function scheduleAbsent() {
+  const deadline = new Date();
+  deadline.setHours(9, 59, 0, 0);
+  setTimeout(async () => {
+    const url = "https://api.airtable.com/v0/" + BASE_ID + "/" + TABLE_NAME;
+    const headers = { Authorization: "Bearer " + AIRTABLE_API_KEY };
+    const res  = await fetch(url, { headers });
+    const data = await res.json();
+
+    while (data.records.length > 0) {
+      const chunk = data.records.splice(0, 10);
+      await fetch(url, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          records: chunk.map(r => ({
+            id: r.id,
+            fields: { [STATUS_FIELD]: r.fields[STATUS_FIELD] ? r.fields[STATUS_FIELD] : "Absent" }
+          }))
+        })
+      });
+    }
+  }, deadline - new Date());
+}
+scheduleAbsent();
 </script>
 </body>
 </html>
